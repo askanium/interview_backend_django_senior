@@ -1,5 +1,9 @@
+import datetime
+
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 
 from interview.inventory.models import Inventory, InventoryLanguage, InventoryTag, InventoryType
@@ -33,7 +37,43 @@ class InventoryListCreateView(APIView):
     
     def get_queryset(self):
         return self.queryset.all()
-    
+
+
+class InventoryPeriodListView(ListAPIView):
+    """
+    A list view to retrieve all inventory created after a specific day (the task description says day, not datetime).
+
+    NOTE: an alternative would be to adjust the existing `InventoryListCreateView` view, or even split
+    the GET/POST behavior. One class to be responsible for List (with or without filtering on date) and
+    another to handle purely POST requests. But the assignment specifically mentioned "create a view", so
+    I am doing so.
+    Also, the url path: `inventory/after/<date>/` does not strictly adhere to RESTful design, but again,
+    I'm following the instruction to create a new view.
+    """
+    queryset = Inventory.objects.all()
+    serializer_class = InventorySerializer
+
+    def validate_kwargs(self, **kwargs):
+        try:
+            datetime.date.fromisoformat(kwargs.get("date", ""))
+        except ValueError:
+            raise ValueError("Incorrect data format, should be YYYY-MM-DD")
+        return True
+
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        try:
+            self.validate_kwargs(**kwargs)
+        except ValueError:
+            return Response("Incorrect data format, should be YYYY-MM-DD", status=HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(self.get_queryset(), many=True)
+
+        return Response(serializer.data, status=200)
+
+    def get_queryset(self):
+        date = self.kwargs.get("date")
+        return self.queryset.filter(created_at__gt=date)
+
 
 class InventoryRetrieveUpdateDestroyView(APIView):
     queryset = Inventory.objects.all()
