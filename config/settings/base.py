@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'interview.core',
     'interview.inventory',
-    'interview.order'
+    'interview.order',
+    'interview.profiles',
 ]
 
 MIDDLEWARE = [
@@ -135,3 +136,11 @@ STATIC_ROOT = 'interview/static'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Adding default auth user model doesn't allow running migrations for it since
+# it interferes with existing migrations for user in place
+# django.db.migrations.exceptions.InconsistentMigrationHistory: Migration admin.0001_initial is \
+# applied before its dependency profiles.0001_initial on database 'default'.
+# This most probably needs a fresh instance of the DB where no migrations were previously run on
+# it so that django will execute the in the proper order.
+AUTH_USER_MODEL = 'profiles.UserProfile'
