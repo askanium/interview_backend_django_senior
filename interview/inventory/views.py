@@ -1,18 +1,15 @@
-from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from interview.inventory.models import Inventory, InventoryLanguage, InventoryTag, InventoryType
-from interview.inventory.paginators import SmallResultsSetPagination
 from interview.inventory.schemas import InventoryMetaData
 from interview.inventory.serializers import InventoryLanguageSerializer, InventorySerializer, InventoryTagSerializer, InventoryTypeSerializer
 
 
-class InventoryListCreateView(ListAPIView, APIView):
+class InventoryListCreateView(APIView):
     queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
-    pagination_class = SmallResultsSetPagination
     
     def post(self, request: Request, *args, **kwargs) -> Response:
         try:
@@ -28,7 +25,15 @@ class InventoryListCreateView(ListAPIView, APIView):
         serializer.save()
         
         return Response(serializer.data, status=201)
-
+    
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        serializer = self.serializer_class(self.get_queryset(), many=True)
+        
+        return Response(serializer.data, status=200)
+    
+    def get_queryset(self):
+        return self.queryset.all()
+    
 
 class InventoryRetrieveUpdateDestroyView(APIView):
     queryset = Inventory.objects.all()
